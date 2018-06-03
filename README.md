@@ -1,8 +1,12 @@
-Bash Script to teleport to other countries (well, via OpenVPN)
+A teleportation script to travel to other countries (well, via OpenVPN)
 -----
 
-(Probably Mac/Linux only, unles you have bash, openvpn, and some
-prayers installed....)
+(Probably Mac/Linux only, unles you have bash, openvpn, and various
+prayers pre-installed....)
+
+A script that tries to create a VPN to a country you specify, and
+route all your system's traffic through that country.
+
 
 I ran across [autovpn](https://github.com/adtac/autovpn), which I
 thought a nifty idea, but after it died silently I thought I'd just
