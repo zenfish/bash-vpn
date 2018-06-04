@@ -62,21 +62,14 @@ fi
 # check cache file... does it exist, and, if it does, how fresh?
 if [ -f "$VPN_SERVERS" ] ; then
     echo cache found, checking age...
-    # AGE=$(echo $(expr $CURRENT_TIME - $(stat -t %s "$VPN_SERVERS"  | awk '{print $12}'|sed 's/"//g')))
-    AGE=$(stat -t %s "$VPN_SERVERS"  | awk '{print $12}'|sed 's/"//g')
+    AGE=$(stat -f %m "$VPN_SERVERS")
 
-    # echo $AGE vs $STALE_WHEN
-
-    DIFF=$(echo $(expr $STALE_WHEN - $AGE))
-
-    if [ $DIFF -lt 0 ] ; then
-        # echo "STALE ($DIFF seconds older than expiration date) - need a new version...."
+    if [ $STALE_WHEN -gt $AGE ] ; then
         STALE="YES"
         echo cache is old, old, old....
     else
         STALE="NO"
         echo cache is still minty fresh
-        # echo "still has time... only $DIFF seconds old"
     fi            
 fi
 
@@ -94,7 +87,7 @@ fi
 # special case
 #
 if [ "$country" == "list" ]; then
-    awk -F, 'NR > 1 {print $7, $6}' "$VPN_SERVERS" | sort -u
+    awk -F, 'NR > 2 {print $7, $6}' "$VPN_SERVERS" | sort -u
     exit 0
 fi
 
