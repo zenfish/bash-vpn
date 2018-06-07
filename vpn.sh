@@ -106,9 +106,9 @@ fi
 # a script that will run after connecting to try to figure out what IP & country you're now in
 echo "#!/bin/bash
 
-ip=\$(curl -s ifconfig.co)
+ip=\$(curl -m 10 -s https://ifconfig.co)
 
-if [ -z "$ip" ] ; then
+if [ -z "\$ip" ] ; then
     echo
     echo
     echo Cannot determine my IP Address... curl/whois may be blocked, the VPN may not have worked, or....?
@@ -124,17 +124,20 @@ echo my current ip: \$ip
 echo
 echo trying to get my current location...
 echo
-whois "\$ip" | awk '/City:/ {print \$0} /Country:/ {print \$0; exit}'
+echo Country ... \$(echo \$(dig +short \$(echo \$ip | awk -F\\. '{printf(\"%s.%s.%s.%s\", \$4,\$3,\$2,\$1)}').origin.asn.cymru.com TXT) | awk -F\\| '{print \$3}')
 echo 
 echo 
 echo 
 " > "$up_script"
 
+
+# Country ... $(dig +short $(echo $ip | awk -F. '{print "$4.$3.$2.$1"}').origin.asn.cymru.com TXT) | awk -F| '{print $3}'
+
 chmod 700 "$up_script"
 
-sudo chown root "$up_script"
-
 echo Starting up VPN, you should be magically transported to $country if this all works....
+
+sudo chown root "$up_script"
 
 echo
 
