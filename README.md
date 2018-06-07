@@ -41,6 +41,28 @@ in $HOME/.vpnlist. This is done to try and prevent hammering the VPN Gate
 project server. It'll fetch a new copy if that file doesn't exist or
 if it's over an hour old.
 
+Output
+-----
+
+If things go well, looks something like this... Control-C should kill it off:
+
+    $ ./vpn.sh FR
+    cache found, checking age...
+    cache is still minty fresh
+    looking for country FR in server list
+    Starting up VPN, you should be magically transported to FR if this all works....
+
+
+    my current ip: 91.121.90.212
+
+    trying to get my current location...
+
+    Country ... FR
+
+    ^C
+
+    $
+
 
 Details
 -----
