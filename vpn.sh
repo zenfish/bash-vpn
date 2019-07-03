@@ -41,7 +41,7 @@ up_script=$(mktemp)
 vpn_output=$(mktemp)
 
 # nuke tmps when done
-# trap "rm -f $tmp_conf $up_script $vpn_output" EXIT
+trap "rm -f $tmp_conf $up_script $vpn_output" EXIT
 
 
 # this is where the list of openvpn servers lives
