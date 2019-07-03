@@ -41,7 +41,7 @@ up_script=$(mktemp)
 vpn_output=$(mktemp)
 
 # nuke tmps when done
-trap "rm -f "$tmp_conf" "$up_script" "$vpn_output" " EXIT
+# trap "rm -f $tmp_conf $up_script $vpn_output" EXIT
 
 
 # this is where the list of openvpn servers lives
@@ -62,7 +62,7 @@ fi
 # check cache file... does it exist, and, if it does, how fresh?
 if [ -f "$VPN_SERVERS" ] ; then
     echo cache found, checking age...
-    AGE=$(stat -f %m "$VPN_SERVERS")
+    AGE=$(/usr/bin/stat -f %m "$VPN_SERVERS")
 
     if [ $STALE_WHEN -gt $AGE ] ; then
         STALE="YES"
@@ -96,7 +96,7 @@ echo "looking for country $country in server list"
 # field 7 is country, last field is config
 
 #HostName,IP,Score,Ping,Speed,CountryLong,CountryShort,NumVpnSessions,Uptime,TotalUsers,TotalTraffic,LogType,Operator,Message,OpenVPN_ConfigData_Base64
-awk -F, '"'"$country"'" == $7 {print $NF; exit 0}' "$VPN_SERVERS" | base64 -D > "$tmp_conf"
+awk -F, '"'"$country"'" == $7 {print $NF; exit 0}' "$VPN_SERVERS" | /usr/bin/base64 -D > "$tmp_conf"
 
 if [ $? != 0 ]; then
     echo "Couldn't find country $country"
@@ -124,7 +124,7 @@ echo my current ip: \$ip
 echo
 echo trying to get my current location...
 echo
-echo Country ... \$(echo \$(dig +short \$(echo \$ip | awk -F\\. '{printf(\"%s.%s.%s.%s\", \$4,\$3,\$2,\$1)}').origin.asn.cymru.com TXT) | awk -F\\| '{print \$3}')
+echo Grats,you are now in... \$(echo \$(dig +short \$(echo \$ip | awk -F\\. '{printf(\"%s.%s.%s.%s\", \$4,\$3,\$2,\$1)}').origin.asn.cymru.com TXT) | awk -F\\| '{print \$3}')
 echo 
 echo 
 echo 
@@ -144,5 +144,12 @@ echo
 #
 # openvpn doesn't want to play ball... so hack time to run a script when we're really connected
 #
-sudo openvpn --script-security 2 --config "$tmp_conf" 2>&1 | awk '{ if ("'"$DEBUG"'" != "") print "OpenVPN:", $0} /Initialization Sequence Completed/ { system ("sudo bash '"$up_script"' &") }'
+sudo openvpn --script-security 2 --config "$tmp_conf" 2>&1 | 
+    awk '{ if ("'"$DEBUG"'" != "") print "OpenVPN:", $0} 
+        /Initialization Sequence Completed/ { system ("sudo bash '"$up_script"' &"); exit(0)} \
+        END { exit(1) }'
+
+if [ ${PIPESTATUS[1]} -ne 0 ]; then
+    echo -e "\nVPN stopped...!  (To see VPN output, add 'DEBUG' to the command line invocation, e.g." $0 $* " DEBUG)"
+fi
 
