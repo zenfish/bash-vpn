@@ -3,7 +3,7 @@
 # usage: $0 country
 #
 if [ -z "$1" ] ; then
-    echo Usage: $0 country-you-want-to-be-teleported-to
+    echo Usage: $0 country-you-want-to-be-teleported-to [DEBUG]
     echo
     echo "  or, to list what's countries are currently out there -"
     echo
@@ -41,7 +41,8 @@ up_script=$(mktemp)
 vpn_output=$(mktemp)
 
 # nuke tmps when done
-trap "rm -f $tmp_conf $up_script $vpn_output" EXIT
+# trap "rm -f $tmp_conf $up_script $vpn_output" EXIT
+# trap "rm -f $tmp_conf $up_script $vpn_output" EXIT
 
 
 # this is where the list of openvpn servers lives
@@ -96,9 +97,13 @@ echo "looking for country $country in server list"
 # field 7 is country, last field is config
 
 #HostName,IP,Score,Ping,Speed,CountryLong,CountryShort,NumVpnSessions,Uptime,TotalUsers,TotalTraffic,LogType,Operator,Message,OpenVPN_ConfigData_Base64
-awk -F, '"'"$country"'" == $7 {print $NF; exit 0}' "$VPN_SERVERS" | /usr/bin/base64 -D > "$tmp_conf"
+# awk -F, '"'"$country"'" == $7 {print $NF; exit 0}' "$VPN_SERVERS" | /usr/bin/base64 -D > "$tmp_conf"
 
-if [ $? != 0 ]; then
+# choose a somewhat random one of the choices, if any
+awk -F, 'BEGIN { n=0 } "'"$country"'" == $7 {vpns[n] = $NF; n++} END { srand(); if (vpns[0]) { print vpns[int(n*rand())] ; exit 0; } }' "$VPN_SERVERS" | /usr/bin/base64 -D > "$tmp_conf"
+
+
+if [ ! -s "$tmp_conf" ]; then
     echo "Couldn't find country $country"
     exit 4
 fi
@@ -106,12 +111,16 @@ fi
 # a script that will run after connecting to try to figure out what IP & country you're now in
 echo "#!/bin/bash
 
+# no longer works....
 ip=\$(curl -m 10 -s https://ifconfig.co)
+ip=\$(curl -m 10 -s ifconfig.me)
 
 if [ -z "\$ip" ] ; then
     echo
     echo
     echo Cannot determine my IP Address... curl/whois may be blocked, the VPN may not have worked, or....?
+    echo
+    echo Try going to 'https://www.google.com/search?client=firefox-b-1-d&q=what+is+my+ip' and see what happens?
     echo
     echo
     exit 0
