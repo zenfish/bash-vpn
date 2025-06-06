@@ -61,8 +61,16 @@ If things go well, looks something like this... Control-C should kill it off:
 
     ^C
 
+
     $
 
+
+Issues
+-----
+
+As if `openvpn` wasn't difficult enough to use before... between versions 2.4 and 2.6 they changed it so 
+that openvpn would simply fail with essentially zero explanation. I tried to get around that by using the 
+"data-ciphers" option and that seems to work for now. Who knows.
 
 Details
 -----

@@ -102,6 +102,18 @@ echo "looking for country $country in server list"
 # choose a somewhat random one of the choices, if any
 awk -F, 'BEGIN { n=0 } "'"$country"'" == $7 {vpns[n] = $NF; n++} END { srand(); if (vpns[0]) { print vpns[int(n*rand())] ; exit 0; } }' "$VPN_SERVERS" | /usr/bin/base64 -D > "$tmp_conf"
 
+egrep -s '^data-ciphers ' "$tmp_conf"
+
+if [ $? != 0 ]; then
+    echo "the 'data-ciphers' option isn't specified... trying to add it..."
+    awk '{ print $0 } /^cipher/ { $1 = "data-ciphers"; print "\n"$0"\n"; }' "$tmp_conf" > "$tmp_conf".2
+    if [ $? != 0 ] ; then
+        echo "problem with ciphers... bailin'!"
+        exit 39
+    fi
+    mv "$tmp_conf".2 "$tmp_conf"
+fi
+
 
 if [ ! -s "$tmp_conf" ]; then
     echo "Couldn't find country $country"
@@ -153,9 +165,14 @@ echo
 #
 # openvpn doesn't want to play ball... so hack time to run a script when we're really connected
 #
+echo  openvpn --script-security 2 --config "$tmp_conf"
+
+# openvpn --script-security 2 --config "$tmp_conf" 2>&1 | 
 sudo openvpn --script-security 2 --config "$tmp_conf" 2>&1 | 
     awk '{ if ("'"$DEBUG"'" != "") print "OpenVPN:", $0} 
-        /Initialization Sequence Completed/ { system ("sudo bash '"$up_script"' &"); exit(0)} \
+        /Initialization Sequence Completed/ { system ("sudo bash '"$up_script"' &"); exit(0)}
+        /TLS Error: TLS handshake failed/   { print "Aiee... TLS ERROR... probably not going to work...."; exit(11); }
+        /Network is unreachable/            { print "Well... cannot connect to remote network... almost certainly is not going to work...."; exit(21); }
         END { exit(1) }'
 
 if [ ${PIPESTATUS[1]} -ne 0 ]; then
